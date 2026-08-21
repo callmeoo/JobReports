@@ -1,46 +1,34 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Python / scraper
+__pycache__/
+*.pyc
+.venv/
+venv/
+.playwright/
+*.csv
+*.db
+data/
+output/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
+# Secrets
+.env
+.env.*
 !.env.example
 
-# vercel
-.vercel
+# Node / Next.js (apps/web)
+node_modules/
+.next/
+out/
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/.vercel
+apps/web/.env
+apps/web/.env.local
+apps/web/*.tsbuildinfo
+apps/web/next-env.d.ts
 
-# local logs
-dev-server.log
+# Misc
+.DS_Store
+*.pem
 *.log
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+dev-server.log
