@@ -1,0 +1,169 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contentItems ContentItem[]
+  buyers       Buyer[]
+  activities   Activity[]
+}
+
+enum ContentType {
+  JOURNAL
+  WEEKLY_REPORT
+  MONTHLY_REPORT
+  REGULATION
+  PROCESS
+  SCRIPT
+  SEO_DRAFT
+  PRODUCT_PLAN
+  CONTRACT_TEMPLATE
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LocaleCode {
+  zh
+  en
+  local
+}
+
+enum LocaleStatus {
+  DRAFT
+  READY
+}
+
+/// 运营素材场景
+enum ScriptScenario {
+  ICEBREAKER
+  FOLLOW_UP
+  QUOTE
+  OBJECTION
+  OTHER
+}
+
+model ContentItem {
+  id          String          @id @default(cuid())
+  type        ContentType
+  slug        String
+  title       String
+  summary     String?
+  countryCode String?
+  /// 仅 SCRIPT 使用：破冰 / 跟进 / 报价 / 异议
+  scenario    ScriptScenario?
+  tags        String[]        @default([])
+  status      ContentStatus   @default(DRAFT)
+  authorId    String
+  author      User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  locales     ContentLocale[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([type, slug])
+  @@index([type])
+  @@index([countryCode])
+  @@index([scenario])
+  @@index([updatedAt])
+}
+
+model ContentLocale {
+  id            String       @id @default(cuid())
+  contentItemId String
+  contentItem   ContentItem  @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  locale        LocaleCode
+  title         String
+  body          String       @default("")
+  status        LocaleStatus @default(DRAFT)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([contentItemId, locale])
+}
+
+enum BuyerStage {
+  NEW
+  CONTACTED
+  INTERESTED
+  QUOTED
+  WON
+  PAUSED
+}
+
+enum BuyerSource {
+  JIJI
+  WEBSITE
+  EXHIBITION
+  REFERRAL
+  OTHER
+}
+
+enum ActivityChannel {
+  WHATSAPP
+  EMAIL
+  PHONE
+  MEETING
+  NOTE
+  OTHER
+}
+
+model Buyer {
+  id             String      @id @default(cuid())
+  companyName    String
+  contactName    String?
+  whatsapp       String?
+  phone          String?
+  email          String?
+  countryCode    String?
+  city           String?
+  source         BuyerSource @default(OTHER)
+  sourceRef      String?
+  stage          BuyerStage  @default(NEW)
+  tier           String?
+  nextFollowUpAt DateTime?
+  notes          String?
+  tags           String[]    @default([])
+  authorId       String
+  author         User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  activities     Activity[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([authorId, nextFollowUpAt])
+  @@index([authorId, stage])
+  @@index([countryCode])
+  @@index([updatedAt])
+}
+
+model Activity {
+  id           String          @id @default(cuid())
+  buyerId      String
+  buyer        Buyer           @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  channel      ActivityChannel @default(WHATSAPP)
+  content      String
+  scriptId     String?
+  scriptTitle  String?
+  stageAfter   BuyerStage?
+  createdAt    DateTime        @default(now())
+
+  @@index([buyerId, createdAt])
+  @@index([authorId, createdAt])
+}
