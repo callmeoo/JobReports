@@ -13,6 +13,7 @@ export const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   REGULATION: "法规",
   PROCESS: "进口流程",
   SCRIPT: "运营话术",
+  MARKET_RESEARCH: "市场调研",
   SEO_DRAFT: "SEO/GEO 草稿",
   PRODUCT_PLAN: "产品规划",
   CONTRACT_TEMPLATE: "合同模板",
@@ -25,6 +26,8 @@ export const PERSONAL_TYPES: ContentType[] = [
 ];
 
 export const KNOWLEDGE_TYPES: ContentType[] = ["REGULATION", "PROCESS"];
+
+export const MARKET_RESEARCH_TYPES: ContentType[] = ["MARKET_RESEARCH"];
 
 export const MATERIAL_TYPES: ContentType[] = ["SCRIPT"];
 

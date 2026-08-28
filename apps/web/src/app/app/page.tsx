@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { ContentList } from "@/components/content-list";
 import { auth } from "@/lib/auth";
-import { KNOWLEDGE_TYPES, PERSONAL_TYPES } from "@/lib/content-types";
+import { KNOWLEDGE_TYPES, MARKET_RESEARCH_TYPES, PERSONAL_TYPES } from "@/lib/content-types";
 import { db } from "@/lib/db";
 import { workspaceAuthorFilter } from "@/lib/workspace";
 
@@ -21,6 +21,7 @@ export default async function DashboardPage() {
     recent,
     personalCount,
     knowledgeCount,
+    marketResearchCount,
     materialCount,
     todoBuyers,
   ] = await Promise.all([
@@ -35,6 +36,9 @@ export default async function DashboardPage() {
     }),
     db.contentItem.count({
       where: { ...authorFilter, type: { in: KNOWLEDGE_TYPES } },
+    }),
+    db.contentItem.count({
+      where: { ...authorFilter, type: { in: MARKET_RESEARCH_TYPES } },
     }),
     db.contentItem.count({
       where: { ...authorFilter, type: "SCRIPT" },
@@ -60,10 +64,11 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <StatCard label="今日待跟进" value={todoBuyers} href="/app/buyers?tab=todo" />
         <StatCard label="运营话术" value={materialCount} href="/app/materials" />
         <StatCard label="业务知识" value={knowledgeCount} href="/app/knowledge" />
+        <StatCard label="市场调研" value={marketResearchCount} href="/app/market-research" />
         <StatCard label="个人库" value={personalCount} href="/app/personal" />
       </div>
 

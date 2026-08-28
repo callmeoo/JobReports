@@ -16,9 +16,71 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  contentItems ContentItem[]
-  buyers       Buyer[]
-  activities   Activity[]
+  contentItems   ContentItem[]
+  buyers         Buyer[]
+  activities     Activity[]
+  dailyReports   DailyReport[]
+  weeklyReports  WeeklyReport[]
+}
+
+enum ReportStatus {
+  DRAFT
+  READY
+  PUBLISHED
+}
+
+model DailyReport {
+  id           String       @id @default(cuid())
+  authorId     String
+  reportDate   DateTime     @db.Date
+  status       ReportStatus @default(DRAFT)
+
+  doneToday         String  @default("")
+  processNotes      String?
+  reflection        String?
+
+  leadershipSummary String  @default("")
+  leadershipItems   Json    @default("[]")
+
+  aiGeneratedAt  DateTime?
+  weeklyReportId String?
+  weeklyReport   WeeklyReport? @relation(fields: [weeklyReportId], references: [id], onDelete: SetNull)
+
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([authorId, reportDate])
+  @@index([authorId, reportDate])
+  @@index([weeklyReportId])
+}
+
+model WeeklyReport {
+  id         String       @id @default(cuid())
+  authorId   String
+  weekStart  DateTime     @db.Date
+  weekEnd    DateTime     @db.Date
+  status     ReportStatus @default(DRAFT)
+
+  personalReview  String  @default("")
+  experienceNotes String?
+
+  leadershipSummary String @default("")
+  leadershipItems   Json   @default("[]")
+
+  shareToken    String   @unique @default(cuid())
+  shareEnabled  Boolean  @default(false)
+
+  aiGeneratedAt DateTime?
+  publishedAt   DateTime?
+
+  dailyReports DailyReport[]
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([authorId, weekStart])
+  @@index([authorId, weekStart])
 }
 
 enum ContentType {
@@ -28,6 +90,7 @@ enum ContentType {
   REGULATION
   PROCESS
   SCRIPT
+  MARKET_RESEARCH
   SEO_DRAFT
   PRODUCT_PLAN
   CONTRACT_TEMPLATE

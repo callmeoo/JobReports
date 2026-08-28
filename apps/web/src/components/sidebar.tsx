@@ -8,6 +8,8 @@ const NAV_ITEMS = [
   { href: "/app/buyers", label: "买家运营" },
   { href: "/app/materials", label: "运营素材" },
   { href: "/app/knowledge", label: "业务知识" },
+  { href: "/app/market-research", label: "市场调研" },
+  { href: "/app/reports", label: "工作汇报" },
   { href: "/app/personal", label: "个人库" },
   { href: "/app/search", label: "搜索" },
 ];

@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   CONTENT_TYPE_LABELS,
   KNOWLEDGE_TYPES,
+  MARKET_RESEARCH_TYPES,
   MATERIAL_TYPES,
   PERSONAL_TYPES,
   SCRIPT_SCENARIO_LABELS,
@@ -17,6 +18,9 @@ function getBasePath(type: ContentType) {
   }
   if (KNOWLEDGE_TYPES.includes(type)) {
     return "/app/knowledge";
+  }
+  if (MARKET_RESEARCH_TYPES.includes(type)) {
+    return "/app/market-research";
   }
   if (MATERIAL_TYPES.includes(type)) {
     return "/app/materials";
