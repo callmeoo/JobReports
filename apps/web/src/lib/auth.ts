@@ -12,19 +12,34 @@ const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+function getConfiguredPassword(): string | null {
+  const value = process.env.AUTH_PASSWORD?.trim();
+  return value || null;
+}
+
 async function ensureUser(email: string, password: string) {
   const normalizedEmail = email.trim().toLowerCase();
+  const configuredPassword = getConfiguredPassword();
   const existing = await db.user.findUnique({ where: { email: normalizedEmail } });
 
   if (existing) {
     const valid = await bcrypt.compare(password, existing.passwordHash);
-    if (!valid) {
-      return null;
+    if (valid) {
+      return existing;
     }
-    return existing;
+
+    // Vercel 更新 AUTH_PASSWORD 后，允许用环境变量密码重新同步
+    if (configuredPassword && password === configuredPassword) {
+      const passwordHash = await bcrypt.hash(configuredPassword, 12);
+      return db.user.update({
+        where: { id: existing.id },
+        data: { passwordHash },
+      });
+    }
+
+    return null;
   }
 
-  const configuredPassword = process.env.AUTH_PASSWORD;
   if (!configuredPassword || password !== configuredPassword) {
     return null;
   }
@@ -49,6 +64,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "密码", type: "password" },
       },
       authorize: async (credentials) => {
+        if (!process.env.AUTH_SECRET?.trim()) {
+          console.error("[auth] AUTH_SECRET is not configured");
+          return null;
+        }
+
+        if (!getConfiguredPassword()) {
+          console.error("[auth] AUTH_PASSWORD is not configured");
+          return null;
+        }
+
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) {
           return null;
@@ -59,16 +84,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const user = await ensureUser(email, parsed.data.password);
-        if (!user) {
+        try {
+          const user = await ensureUser(email, parsed.data.password);
+          if (!user) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name ?? email.split("@")[0],
+          };
+        } catch (error) {
+          console.error("[auth] database error during login", error);
           return null;
         }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name ?? email.split("@")[0],
-        };
       },
     }),
   ],

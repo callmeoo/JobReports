@@ -23,7 +23,9 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError("邮箱或密码不正确，或该邮箱不在白名单内。");
+      setError(
+        "登录失败。请确认：1) 邮箱在白名单内；2) 密码与 Vercel 环境变量 AUTH_PASSWORD 一致（当前本地默认 JiJiOps2026）；3) Vercel 已配置 AUTH_SECRET、AUTH_PASSWORD、DATABASE_URL、AUTH_TRUST_HOST=true。",
+      );
       return;
     }
 
