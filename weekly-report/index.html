@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工作汇报 · 日报 & 周报</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />
+  <style>
+    .page { display: none; }
+    .page.active { display: block; }
+    @media print {
+      .no-print { display: none !important; }
+      .page { display: none !important; }
+      #page-share { display: block !important; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased">
+  <div class="max-w-4xl mx-auto px-4 py-8 pb-20">
+    <header class="mb-6">
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-400">工作汇报</p>
+      <h1 class="mt-1 text-3xl font-bold text-gray-900">日报 &amp; 周报</h1>
+      <p class="mt-1 text-sm text-gray-500">每日记录 → 一键生成周报 · 数据保存在浏览器本地</p>
+    </header>
+
+    <ul class="no-print flex flex-wrap text-sm font-medium text-center text-gray-500 border-b border-gray-200 mb-6">
+      <li class="me-2">
+        <button type="button" data-page="planning" class="nav-tab inline-block p-4 text-blue-600 border-b-2 border-blue-600 rounded-t-lg active">本周规划</button>
+      </li>
+      <li class="me-2">
+        <button type="button" data-page="daily" class="nav-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">今日日报</button>
+      </li>
+      <li class="me-2">
+        <button type="button" data-page="week-daily" class="nav-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">本周日报</button>
+      </li>
+      <li class="me-2">
+        <button type="button" data-page="weekly" class="nav-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">周报编辑</button>
+      </li>
+      <li>
+        <button type="button" data-page="share" class="nav-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">领导预览</button>
+      </li>
+    </ul>
+
+    <div id="page-planning" class="page active">
+      <div class="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div>
+            <h2 id="plan-week-label" class="text-lg font-semibold text-gray-900">—</h2>
+            <p class="text-sm text-gray-500">每天按 8 小时排满，超出容量进入机动任务池</p>
+          </div>
+          <div class="no-print flex flex-wrap gap-2">
+            <button id="btn-prev-week" type="button" class="py-2 px-3 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100">← 上周</button>
+            <button id="btn-this-week" type="button" class="py-2 px-3 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100">本周</button>
+            <button id="btn-next-week" type="button" class="py-2 px-3 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100">下周 →</button>
+            <button id="btn-assign" type="button" class="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2">自动分派</button>
+          </div>
+        </div>
+        <div id="module-stats" class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4"></div>
+        <div id="day-loads" class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8"></div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-2 pb-2 border-b border-gray-200">模块管理</h3>
+        <p class="mb-3 text-sm text-gray-500">可增删模块；删除后，该模块下任务会归入「其他内容」。</p>
+        <div id="module-chips" class="flex flex-wrap gap-2 mb-3"></div>
+        <div class="flex flex-wrap gap-2 mb-8">
+          <input type="text" id="new-module-name" placeholder="新模块名称，如：品牌合作" maxlength="20"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-64 p-2.5" />
+          <button id="btn-add-module" type="button" class="py-2.5 px-5 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100">添加模块</button>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-2 pb-2 border-b border-gray-200">添加本周任务</h3>
+        <p class="mb-4 text-sm text-gray-500">同一模块可反复添加；任务框支持多行，每行一条，会批量加入当前模块。</p>
+        <div class="grid md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="p-module" class="block mb-2 text-sm font-medium text-gray-900">模块</label>
+            <select id="p-module" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select>
+          </div>
+          <div>
+            <label for="p-priority" class="block mb-2 text-sm font-medium text-gray-900">优先级</label>
+            <select id="p-priority" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+              <option value="high">高</option>
+              <option value="medium" selected>中</option>
+              <option value="low">低</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label for="p-title" class="block mb-2 text-sm font-medium text-gray-900">任务内容</label>
+            <textarea id="p-title" rows="4" placeholder="例如：&#10;完成塞内加尔 SEO 文章&#10;提交 sitemap&#10;（每行一条，都会加到上面选中的模块）" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4 md:col-span-2">
+            <div>
+              <label for="p-hours" class="block mb-2 text-sm font-medium text-gray-900">每条预计小时</label>
+              <input type="number" id="p-hours" min="0.5" step="0.5" value="2" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+            </div>
+            <div>
+              <label for="p-due" class="block mb-2 text-sm font-medium text-gray-900">截止日</label>
+              <input type="date" id="p-due" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="btn-add-task" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5">添加到当前模块</button>
+          <button id="btn-add-and-continue" type="button" class="py-2.5 px-5 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100">添加后继续写</button>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mt-8 mb-4 pb-2 border-b border-gray-200">任务清单 <span class="text-sm font-normal text-gray-500">（按模块分组，可多次添加）</span></h3>
+        <div id="plan-tasks" class="space-y-4"></div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mt-8 mb-4 pb-2 border-b border-gray-200">机动任务池</h3>
+        <div id="task-pool" class="p-4 text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50"></div>
+      </div>
+    </div>
+
+    <div id="page-daily" class="page">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <span id="week-label" class="font-semibold text-gray-900">—</span>
+        <span id="week-progress" class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-sm">0/5 天已记录</span>
+      </div>
+      <div id="week-calendar" class="grid grid-cols-7 gap-2 mb-6"></div>
+
+      <div class="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <h2 id="daily-title" class="text-lg font-semibold">今日日报</h2>
+          <input type="date" id="date-picker" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 w-auto" />
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">今日计划任务</h3>
+        <div id="daily-plan" class="mb-6"></div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+          个人版
+          <span class="bg-gray-100 text-gray-800 text-xs font-medium ms-2 px-2.5 py-0.5 rounded-sm">仅自己可见</span>
+        </h3>
+        <label for="f-done" class="block mb-2 text-sm font-medium text-gray-900">今日完成 *</label>
+        <textarea id="f-done" rows="4" placeholder="今天完成了什么？写具体成果和数据" class="mb-4 block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"></textarea>
+        <label for="f-process" class="block mb-2 text-sm font-medium text-gray-900">过程记录</label>
+        <textarea id="f-process" rows="3" placeholder="关键步骤、沟通记录（可选）" class="mb-4 block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"></textarea>
+        <label for="f-reflection" class="block mb-2 text-sm font-medium text-gray-900">复盘 / 感悟</label>
+        <textarea id="f-reflection" rows="3" placeholder="个人反思，不会进入领导版" class="mb-4 block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"></textarea>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+          领导版
+          <span class="bg-blue-100 text-blue-800 text-xs font-medium ms-2 px-2.5 py-0.5 rounded-sm">进入周报</span>
+        </h3>
+        <label for="f-category" class="block mb-2 text-sm font-medium text-gray-900">分类 <span class="font-normal text-gray-500">（可选，用于自动归入周报章节）</span></label>
+        <select id="f-category" class="mb-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select>
+        <label for="f-result" class="block mb-2 text-sm font-medium text-gray-900">今日结论</label>
+        <textarea id="f-result" rows="2" placeholder="1-2 句话，结果导向，会进入对应周报章节" class="mb-4 block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"></textarea>
+
+        <div class="no-print flex flex-wrap gap-2">
+          <button id="btn-gen-result" type="button" class="py-2.5 px-5 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100">从「今日完成」提取结论</button>
+          <button id="btn-save-daily" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5">保存今日</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-week-daily" class="page">
+      <div class="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <span id="week-label-2" class="font-semibold text-gray-900">—</span>
+          <button id="btn-gen-weekly" type="button" class="text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5">生成本周周报</button>
+        </div>
+        <div id="daily-list" class="divide-y divide-gray-200"></div>
+      </div>
+    </div>
+
+    <div id="page-weekly" class="page">
+      <div class="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <span id="week-label-3" class="font-semibold text-gray-900">—</span>
+          <span id="weekly-status" class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-sm">草稿</span>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">报告抬头</h3>
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label for="w-recipient" class="block mb-2 text-sm font-medium text-gray-900">收件人</label>
+            <input type="text" id="w-recipient" value="帅总" placeholder="帅总" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+          </div>
+          <div>
+            <label for="w-title-suffix" class="block mb-2 text-sm font-medium text-gray-900">标题后缀</label>
+            <input type="text" id="w-title-suffix" value="社媒运营周总结如下" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
+          </div>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+          个人复盘
+          <span class="bg-gray-100 text-gray-800 text-xs font-medium ms-2 px-2.5 py-0.5 rounded-sm">仅自己</span>
+        </h3>
+        <label for="w-personal" class="block mb-2 text-sm font-medium text-gray-900">本周复盘</label>
+        <textarea id="w-personal" rows="4" placeholder="本周整体感受、得失（不会进入领导版）" class="mb-4 block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"></textarea>
+        <label for="w-experience" class="block mb-2 text-sm font-medium text-gray-900">经验总结 <span class="font-normal text-gray-500">（半年会素材）</span></label>
+        <textarea id="w-experience" rows="3" placeholder="可复用经验、方法论" class="mb-6 block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"></textarea>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+          领导版章节
+          <span class="bg-blue-100 text-blue-800 text-xs font-medium ms-2 px-2.5 py-0.5 rounded-sm">可分享</span>
+        </h3>
+        <div id="w-sections" class="space-y-4"></div>
+        <button id="btn-add-section" type="button" class="mt-3 w-full py-2.5 text-sm font-medium text-gray-500 border border-dashed border-gray-300 rounded-lg hover:bg-gray-50">+ 添加章节</button>
+
+        <div class="no-print flex flex-wrap gap-2 mt-6">
+          <button id="btn-save-weekly" type="button" class="py-2.5 px-5 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100">保存周报</button>
+          <button id="btn-publish" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5">标记可分享</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-share" class="page">
+      <div class="no-print flex flex-wrap gap-2 mb-4">
+        <button id="btn-copy" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5">复制文本（微信格式）</button>
+        <button type="button" onclick="window.print()" class="py-2.5 px-5 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100">打印 / 导出 PDF</button>
+      </div>
+      <div id="share-render"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-sm" role="alert">
+    <div class="inline-flex items-center justify-center shrink-0 w-8 h-8 text-blue-500 bg-blue-100 rounded-lg">✓</div>
+    <div id="toast-msg" class="ms-3 text-sm font-normal"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
+  <script src="./scheduler.js"></script>
+  <script>
+    const STORAGE_DAILY = "jr-daily-v3";
+    const STORAGE_WEEKLY = "jr-weekly-v3";
+    const STORAGE_PLANS = "jr-plans-v1";
+    const STORAGE_MODULES = "jr-modules-v1";
+    const STORAGE_SEEDED = "jr-seeded-v3";
+    const WD = ["一","二","三","四","五","六","日"];
+    const CN_NUM = ["一","二","三","四","五","六","七","八","九","十"];
+    const FALLBACK_MODULE = "其他内容";
+
+    const DEFAULT_MODULES = ["网站功能", "SEO/GEO", "社媒", "线索抓取", "市场研究", "自我成长", "其他内容"];
+
+    function loadModules() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_MODULES));
+        if (Array.isArray(saved) && saved.length) {
+          return saved.map(m => String(m).trim()).filter(Boolean);
+        }
+      } catch { /* ignore */ }
+      return [...DEFAULT_MODULES];
+    }
+
+    function saveModules() {
+      localStorage.setItem(STORAGE_MODULES, JSON.stringify(modules));
+    }
+
+    let modules = loadModules();
+    if (!modules.includes(FALLBACK_MODULE)) {
+      modules.push(FALLBACK_MODULE);
+      saveModules();
+    }
+
+    function moduleLabel(name) {
+      return name === "社媒" ? "社媒（FB / YouTube / TikTok）" : name;
+    }
+
+    function sectionTitleFor(name) {
+      const map = {
+        "社媒": "社媒（FB / YouTube / TikTok）",
+        "FB运营": "社媒（FB / YouTube / TikTok）",
+        "SEO/GEO": "SEO / GEO 内容",
+        "其他": FALLBACK_MODULE,
+        "其他内容": FALLBACK_MODULE,
+      };
+      return map[name] || name || FALLBACK_MODULE;
+    }
+
+    const DEMO_WEEK_START = "2026-08-24";
+    const DEMO_WEEKLY = {
+      recipient: "帅总",
+      titleSuffix: "社媒运营周总结如下",
+      personal: "",
+      experience: "",
+      sections: [
+        {
+          id: "demo-1",
+          title: "FB Feed / Reel 内容运营",
+          body: "本周产出：车辆库存\n5条视频\n5条feed图文",
+        },
+        {
+          id: "demo-2",
+          title: "SEO / GEO 内容",
+          body: "1.本周完成 2篇 SEO 主题帖：车辆选购指南、二手车出口流程\n2.网站未在 Google Console 添加 sitemap，已提交待验证",
+        },
+        {
+          id: "demo-3",
+          title: "网站功能",
+          body: "验收内容：海外站首页改版、车辆列表筛选功能\n验收发现多处问题：移动端布局错位、筛选条件未生效、部分图片加载失败，已反馈开发跟进",
+        },
+        {
+          id: "demo-4",
+          title: "其他",
+          body: "1.唯普国际分销商沟通：确认Q4合作方案及价格体系\n2、国家事业部2026-2027运营方案PPT初稿完成\n3、运营实习生面试2人，待定1人\n4、海外站品牌名及费用沟通：与品牌部确认最终命名方案",
+        },
+        {
+          id: "demo-5",
+          title: "下周事项",
+          body: "1.日常FB运营、SEO内容运营\n2.网站功能跟进\n3.客户线索跟进\n4.面试",
+        },
+      ],
+      status: "已发布",
+    };
+
+    let selectedDate = todayKey();
+    let state = { daily: loadDaily(), weekly: loadWeekly(), plans: loadPlans() };
+
+    function todayKey() {
+      return fmt(new Date());
+    }
+
+    function fmt(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function getWeekStart(dateKey) {
+      const d = new Date(dateKey + "T12:00:00");
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diff);
+      return fmt(d);
+    }
+
+    function getWeekDays(startKey) {
+      const days = [];
+      const d = new Date(startKey + "T12:00:00");
+      for (let i = 0; i < 7; i++) {
+        days.push(fmt(d));
+        d.setDate(d.getDate() + 1);
+      }
+      return days;
+    }
+
+    function weekLabel(startKey) {
+      const days = getWeekDays(startKey);
+      const s = days[0].slice(5).replace("-", "/");
+      const e = days[6].slice(5).replace("-", "/");
+      return `${s} – ${e}`;
+    }
+
+    function getWorkdayRange(startKey) {
+      const days = getWeekDays(startKey).filter(isWeekday);
+      if (!days.length) return weekLabel(startKey).replace(" – ", "-").replace(/\//g, ".");
+      const s = days[0].slice(5).replace("-", ".");
+      const e = days[days.length - 1].slice(5).replace("-", ".");
+      return `${s}-${e}`;
+    }
+
+    function getMonthWeekInfo(startKey) {
+      const start = new Date(startKey + "T12:00:00");
+      const month = start.getMonth() + 1;
+      const year = start.getFullYear();
+      const monthStart = new Date(year, start.getMonth(), 1);
+      let weekNum = 0;
+      const cursor = new Date(monthStart);
+      const dow = cursor.getDay();
+      const toMon = dow === 0 ? -6 : 1 - dow;
+      cursor.setDate(cursor.getDate() + toMon);
+      if (cursor.getMonth() !== start.getMonth()) cursor.setDate(cursor.getDate() + 7);
+      while (cursor <= start) {
+        weekNum++;
+        cursor.setDate(cursor.getDate() + 7);
+      }
+      return { month, weekNum: weekNum || 1, dateRange: getWorkdayRange(startKey) };
+    }
+
+    function cnNumeral(n) {
+      if (n <= 10) return CN_NUM[n - 1];
+      if (n < 20) return "十" + CN_NUM[n - 11];
+      return String(n);
+    }
+
+    function isWeekday(key) {
+      const day = new Date(key + "T12:00:00").getDay();
+      return day !== 0 && day !== 6;
+    }
+
+    function loadDaily() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_DAILY)) || {}; } catch { return {}; }
+    }
+
+    function loadWeekly() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_WEEKLY)) || {}; } catch { return {}; }
+    }
+
+    function loadPlans() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_PLANS)) || {}; } catch { return {}; }
+    }
+
+    function saveDaily() { localStorage.setItem(STORAGE_DAILY, JSON.stringify(state.daily)); }
+    function saveWeekly() { localStorage.setItem(STORAGE_WEEKLY, JSON.stringify(state.weekly)); }
+    function savePlans() { localStorage.setItem(STORAGE_PLANS, JSON.stringify(state.plans)); }
+
+    function getWorkdays(startKey) {
+      return getWeekDays(startKey).filter(isWeekday);
+    }
+
+    function getPlan(startKey) {
+      if (!state.plans[startKey]) {
+        state.plans[startKey] = {
+          tasks: [{
+            id: crypto.randomUUID(),
+            module: "自我成长",
+            title: "本周自我成长（学习 / 复盘）",
+            priority: "low",
+            hours: 2,
+            dueDate: "",
+            assignedDate: "",
+            status: "pending",
+            actualResult: "",
+          }],
+          pool: [],
+          loads: {},
+        };
+        savePlans();
+      }
+      return state.plans[startKey];
+    }
+
+    function defaultSections() {
+      return [
+        ...modules.map(m => ({
+          id: crypto.randomUUID(),
+          title: sectionTitleFor(m),
+          body: "",
+        })),
+        { id: crypto.randomUUID(), title: "下周事项", body: "" },
+      ];
+    }
+
+    function getDaily(key) {
+      return state.daily[key] || { done: "", process: "", reflection: "", result: "", category: "" };
+    }
+
+    function getWeekly(weekStart) {
+      const existing = state.weekly[weekStart];
+      if (existing && existing.sections) return existing;
+      return {
+        recipient: "帅总",
+        titleSuffix: "社媒运营周总结如下",
+        personal: existing?.personal || "",
+        experience: existing?.experience || "",
+        sections: defaultSections(),
+        status: existing?.status || "草稿",
+      };
+    }
+
+    function seedDemoData() {
+      if (localStorage.getItem(STORAGE_SEEDED)) return;
+      state.weekly[DEMO_WEEK_START] = JSON.parse(JSON.stringify(DEMO_WEEKLY));
+      saveWeekly();
+      localStorage.setItem(STORAGE_SEEDED, "1");
+    }
+
+    const FIELD = "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5";
+    const NAV_IDLE = "nav-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300";
+    const NAV_ACTIVE = "nav-tab inline-block p-4 text-blue-600 border-b-2 border-blue-600 rounded-t-lg active";
+
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      document.getElementById("toast-msg").textContent = msg;
+      el.classList.remove("hidden");
+      el.classList.add("flex");
+      setTimeout(() => {
+        el.classList.add("hidden");
+        el.classList.remove("flex");
+      }, 2000);
+    }
+
+    function priorityBadge(priority) {
+      if (priority === "high") return "bg-red-100 text-red-800";
+      if (priority === "low") return "bg-blue-100 text-blue-800";
+      return "bg-yellow-100 text-yellow-800";
+    }
+
+    function esc(s) {
+      return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function escAttr(s) {
+      return esc(s).replace(/"/g, "&quot;");
+    }
+
+    function buildReportTitle(w, startKey) {
+      const info = getMonthWeekInfo(startKey);
+      return `${info.month}月第${info.weekNum}周（${info.dateRange}）${w.titleSuffix || "社媒运营周总结如下"}`;
+    }
+
+    function formatReportText(w, startKey) {
+      const recipient = (w.recipient || "帅总").replace(/，$/, "");
+      const lines = [`${recipient}，`, buildReportTitle(w, startKey), ""];
+      (w.sections || []).forEach((sec, i) => {
+        lines.push(`${cnNumeral(i + 1)}、${sec.title}`);
+        if (sec.body && sec.body.trim()) lines.push(sec.body.trim());
+        lines.push("");
+      });
+      while (lines.length && lines[lines.length - 1] === "") lines.pop();
+      return lines.join("\n");
+    }
+
+    // --- Weekly planning and dispatch ---
+    function fillModuleSelects(selected) {
+      const current = selected || document.getElementById("p-module").value;
+      document.getElementById("p-module").innerHTML = modules
+        .map(module => `<option value="${escAttr(module)}" ${module === current ? "selected" : ""}>${esc(moduleLabel(module))}</option>`)
+        .join("");
+
+      const cat = document.getElementById("f-category");
+      let catVal = cat.value;
+      if (catVal === "其他") catVal = FALLBACK_MODULE;
+      cat.innerHTML = `<option value="">不分类</option>` + modules
+        .map(module => `<option value="${escAttr(module)}" ${module === catVal ? "selected" : ""}>${esc(moduleLabel(module))}</option>`)
+        .join("");
+    }
+
+    function renderModuleChips() {
+      document.getElementById("module-chips").innerHTML = modules.map(module => {
+        const locked = module === FALLBACK_MODULE;
+        return `
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg">
+            ${esc(moduleLabel(module))}
+            ${locked
+              ? '<span class="text-xs text-gray-400">默认</span>'
+              : `<button type="button" class="text-red-600 hover:underline text-xs" onclick="removeModule(${JSON.stringify(module)})" title="删除模块">删除</button>`}
+          </span>`;
+      }).join("");
+    }
+
+    function addModule() {
+      const input = document.getElementById("new-module-name");
+      const name = input.value.trim().replace(/\s+/g, " ");
+      if (!name) { toast("请输入模块名称"); return; }
+      if (name.length > 20) { toast("模块名称最多 20 字"); return; }
+      if (modules.includes(name)) { toast("该模块已存在"); return; }
+      modules.push(name);
+      saveModules();
+      input.value = "";
+      fillModuleSelects(name);
+      renderModuleChips();
+      renderPlanning();
+      toast(`已添加模块「${name}」`);
+    }
+
+    window.removeModule = (name) => {
+      if (name === FALLBACK_MODULE) {
+        toast("「其他内容」为兜底模块，不可删除");
+        return;
+      }
+      if (modules.length <= 1) {
+        toast("至少保留一个模块");
+        return;
+      }
+      const taskCount = Object.values(state.plans).reduce(
+        (sum, plan) => sum + (plan.tasks || []).filter(t => t.module === name).length,
+        0
+      );
+      const msg = taskCount
+        ? `删除「${name}」后，其下 ${taskCount} 条任务将归入「${FALLBACK_MODULE}」。确定删除？`
+        : `确定删除模块「${name}」？`;
+      if (!confirm(msg)) return;
+
+      modules = modules.filter(m => m !== name);
+      if (!modules.includes(FALLBACK_MODULE)) modules.push(FALLBACK_MODULE);
+      saveModules();
+
+      Object.keys(state.plans).forEach(week => {
+        const plan = state.plans[week];
+        (plan.tasks || []).forEach(task => {
+          if (task.module === name) task.module = FALLBACK_MODULE;
+        });
+      });
+      savePlans();
+
+      Object.keys(state.daily).forEach(day => {
+        if (state.daily[day].category === name) state.daily[day].category = FALLBACK_MODULE;
+      });
+      saveDaily();
+
+      fillModuleSelects(FALLBACK_MODULE);
+      renderModuleChips();
+      renderPlanning();
+      loadDailyForm();
+      toast(`已删除「${name}」`);
+    };
+
+    function initPlanningControls() {
+      fillModuleSelects();
+      renderModuleChips();
+      document.getElementById("p-due").value = getWorkdays(getWeekStart(selectedDate))[4];
+    }
+
+    function changePlanWeek(offsetDays) {
+      const date = new Date(selectedDate + "T12:00:00");
+      date.setDate(date.getDate() + offsetDays);
+      selectedDate = fmt(date);
+      document.getElementById("p-due").value = getWorkdays(getWeekStart(selectedDate))[4];
+      renderPlanning();
+      renderCalendar();
+    }
+
+    function priorityLabel(priority) {
+      return priority === "high" ? "高优" : priority === "low" ? "低优" : "中优";
+    }
+
+    function renderPlanning() {
+      const start = getWeekStart(selectedDate);
+      const plan = getPlan(start);
+      const workdays = getWorkdays(start);
+      document.getElementById("plan-week-label").textContent = weekLabel(start);
+
+      document.getElementById("module-stats").innerHTML = modules.map(module => {
+        const tasks = plan.tasks.filter(task => task.module === module);
+        const hours = tasks.reduce((sum, task) => sum + Number(task.hours || 0), 0);
+        return `<div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+          <h5 class="mb-1 text-sm font-semibold text-gray-900">${esc(moduleLabel(module))}</h5>
+          <p class="text-xs text-gray-500">${tasks.length} 项 · ${hours} 小时</p>
+        </div>`;
+      }).join("");
+
+      document.getElementById("day-loads").innerHTML = workdays.map((day, i) => {
+        const hours = plan.tasks
+          .filter(task => task.assignedDate === day)
+          .reduce((sum, task) => sum + Number(task.hours || 0), 0);
+        const pct = Math.min(100, (hours / 8) * 100);
+        const bar = hours > 8 ? "bg-red-600" : "bg-blue-600";
+        return `<div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+          <div class="flex justify-between mb-1">
+            <span class="text-sm font-medium text-gray-700">周${WD[i]} · ${day.slice(5)}</span>
+            <span class="text-sm text-gray-500">${hours}/8 小时${hours > 8 ? " · 已超量" : ""}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div class="${bar} h-2.5 rounded-full" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+      }).join("");
+
+      const sorted = [...plan.tasks].sort((a, b) =>
+        (a.assignedDate || "9999").localeCompare(b.assignedDate || "9999")
+      );
+      document.getElementById("plan-tasks").innerHTML = modules.map(module => {
+        const tasks = sorted.filter(task => task.module === module);
+        const label = moduleLabel(module);
+        const hours = tasks.reduce((sum, task) => sum + Number(task.hours || 0), 0);
+        const taskHtml = tasks.length
+          ? tasks.map(task => `
+            <div class="p-3 bg-white border border-gray-200 rounded-lg ${task.status === "completed" ? "opacity-70 bg-green-50" : ""}">
+              <div class="flex justify-between gap-3">
+                <strong class="text-gray-900 text-sm">${esc(task.title)}</strong>
+                <button type="button" class="text-sm text-red-600 hover:underline" onclick="removePlanTask('${task.id}')">删除</button>
+              </div>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="${priorityBadge(task.priority)} text-xs font-medium px-2.5 py-0.5 rounded-sm">${priorityLabel(task.priority)}</span>
+                <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-sm">${task.hours} 小时</span>
+                <span class="text-xs text-gray-500">截止 ${task.dueDate || "本周"}</span>
+              </div>
+              <label class="block mt-2 mb-1 text-xs font-medium text-gray-700">安排到</label>
+              <select onchange="setTaskDate('${task.id}',this.value)" class="${FIELD}">
+                <option value="" ${!task.assignedDate ? "selected" : ""}>机动任务池</option>
+                ${workdays.map((day, i) => `<option value="${day}" ${task.assignedDate === day ? "selected" : ""}>周${WD[i]} · ${day.slice(5)}</option>`).join("")}
+              </select>
+            </div>
+          `).join("")
+          : '<p class="text-sm text-gray-400">暂无任务</p>';
+
+        return `
+          <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <h4 class="font-semibold text-gray-900">${esc(label)}</h4>
+                <p class="text-xs text-gray-500">${tasks.length} 项 · ${hours} 小时</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" class="py-1.5 px-3 text-sm font-medium text-blue-700 bg-white rounded-lg border border-blue-200 hover:bg-blue-50"
+                  onclick="startAddToModule(${JSON.stringify(module)})">+ 再加一条</button>
+                ${module === FALLBACK_MODULE ? "" : `
+                <button type="button" class="py-1.5 px-3 text-sm font-medium text-red-600 bg-white rounded-lg border border-red-200 hover:bg-red-50"
+                  onclick="removeModule(${JSON.stringify(module)})">删除模块</button>`}
+              </div>
+            </div>
+            <div class="space-y-2">${taskHtml}</div>
+          </div>
+        `;
+      }).join("");
+
+      const poolTasks = plan.tasks.filter(task => !task.assignedDate);
+      document.getElementById("task-pool").innerHTML = poolTasks.length
+        ? poolTasks.map(task => `<div class="py-1"><strong>${esc(task.title)}</strong>
+            <span class="text-xs"> · ${esc(task.module)} · ${task.hours} 小时</span></div>`).join("")
+        : '<p class="text-sm">暂无机动任务。超出每日容量或手动移出的任务会显示在这里。</p>';
+    }
+
+    function startAddToModule(module) {
+      document.getElementById("p-module").value = module;
+      const titleEl = document.getElementById("p-title");
+      titleEl.focus();
+      titleEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      toast(`已选中「${moduleLabel(module)}」，可继续添加任务`);
+    }
+
+    function addPlanTask(options = {}) {
+      const keepFocus = Boolean(options.keepFocus);
+      const raw = document.getElementById("p-title").value;
+      const titles = raw
+        .split("\n")
+        .map(line => line.trim())
+        .filter(Boolean);
+
+      if (!titles.length) {
+        toast("请填写任务内容（可多行，每行一条）");
+        return;
+      }
+
+      const start = getWeekStart(selectedDate);
+      const plan = getPlan(start);
+      const module = document.getElementById("p-module").value;
+      const priority = document.getElementById("p-priority").value;
+      const hours = Math.max(0.5, Number(document.getElementById("p-hours").value) || 1);
+      const dueDate = document.getElementById("p-due").value;
+
+      titles.forEach(title => {
+        plan.tasks.push({
+          id: crypto.randomUUID(),
+          module,
+          title,
+          priority,
+          hours,
+          dueDate,
+          assignedDate: "",
+          status: "pending",
+          actualResult: "",
+        });
+      });
+
+      state.plans[start] = plan;
+      savePlans();
+      document.getElementById("p-title").value = "";
+      renderPlanning();
+      toast(`已向「${moduleLabel(module)}」添加 ${titles.length} 条任务`);
+      if (keepFocus) {
+        document.getElementById("p-module").value = module;
+        document.getElementById("p-title").focus();
+      }
+    }
+
+    function assignPlan() {
+      const start = getWeekStart(selectedDate);
+      const plan = getPlan(start);
+      const result = WeeklyScheduler.assignWeeklyTasks(plan.tasks, getWorkdays(start), 8);
+      const assignedById = new Map(
+        Object.values(result.assignments).flat().map(task => [task.id, task.assignedDate])
+      );
+      plan.tasks = plan.tasks.map(task => ({
+        ...task,
+        assignedDate: assignedById.get(task.id) || "",
+      }));
+      plan.pool = result.pool.map(task => task.id);
+      plan.loads = result.loads;
+      state.plans[start] = plan;
+      savePlans();
+      renderPlanning();
+      renderDailyPlan();
+      toast(`已分派 ${plan.tasks.length - result.pool.length} 项，${result.pool.length} 项进入机动池`);
+    }
+
+    window.removePlanTask = (id) => {
+      const start = getWeekStart(selectedDate);
+      const plan = getPlan(start);
+      plan.tasks = plan.tasks.filter(task => task.id !== id);
+      state.plans[start] = plan;
+      savePlans();
+      renderPlanning();
+    };
+
+    window.setTaskDate = (id, date) => {
+      const start = getWeekStart(selectedDate);
+      const plan = getPlan(start);
+      const task = plan.tasks.find(item => item.id === id);
+      if (!task) return;
+      task.assignedDate = date;
+      state.plans[start] = plan;
+      savePlans();
+      renderPlanning();
+      renderDailyPlan();
+    };
+
+    function renderDailyPlan() {
+      const plan = getPlan(getWeekStart(selectedDate));
+      const tasks = plan.tasks.filter(task => task.assignedDate === selectedDate);
+      const el = document.getElementById("daily-plan");
+      el.innerHTML = tasks.length ? tasks.map(task => `
+        <div class="flex items-start gap-3 py-3 border-b border-gray-200 last:border-0">
+          <input type="checkbox" ${task.status === "completed" ? "checked" : ""}
+            onchange="setTaskComplete('${task.id}',this.checked)"
+            class="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500" />
+          <div class="flex-1">
+            <strong class="text-sm text-gray-900">${esc(task.title)}</strong>
+            <div class="mt-1 flex flex-wrap gap-2 text-xs text-gray-500">
+              <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-sm">${esc(task.module)}</span>
+              <span>${task.hours} 小时</span>
+            </div>
+            <input type="text" value="${escAttr(task.actualResult || "")}"
+              oninput="setTaskResult('${task.id}',this.value)" placeholder="填写实际完成结果（用于生成周报）"
+              class="mt-2 ${FIELD}" />
+          </div>
+          <span class="${priorityBadge(task.priority)} text-xs font-medium px-2.5 py-0.5 rounded-sm">${priorityLabel(task.priority)}</span>
+        </div>
+      `).join("") : '<p class="text-sm text-gray-500">今日暂无计划任务，可在「本周规划」中自动分派。</p>';
+    }
+
+    window.setTaskComplete = (id, completed) => {
+      const start = getWeekStart(selectedDate);
+      const plan = getPlan(start);
+      const task = plan.tasks.find(item => item.id === id);
+      if (!task) return;
+      task.status = completed ? "completed" : "pending";
+      state.plans[start] = plan;
+      savePlans();
+      renderDailyPlan();
+    };
+
+    window.setTaskResult = (id, result) => {
+      const start = getWeekStart(selectedDate);
+      const plan = getPlan(start);
+      const task = plan.tasks.find(item => item.id === id);
+      if (!task) return;
+      task.actualResult = result;
+      state.plans[start] = plan;
+      savePlans();
+    };
+
+    // --- Calendar ---
+    function renderCalendar() {
+      const start = getWeekStart(selectedDate);
+      const days = getWeekDays(start);
+      const today = todayKey();
+      let weekdays = 0, filled = 0;
+
+      let html = WD.map(w => `<div class="text-center text-xs font-medium text-gray-500 py-1">${w}</div>`).join("");
+      days.forEach(key => {
+        const d = getDaily(key);
+        const has = d.done.trim().length > 0;
+        if (isWeekday(key)) { weekdays++; if (has) filled++; }
+        const wdIdx = new Date(key + "T12:00:00").getDay();
+        const wd = WD[wdIdx === 0 ? 6 : wdIdx - 1];
+        let cls = "cal-day flex flex-col items-center justify-center aspect-square rounded-lg border text-sm cursor-pointer bg-white border-gray-200 hover:border-blue-500";
+        if (key === selectedDate) cls += " border-blue-600 font-semibold ring-2 ring-blue-100";
+        if (has) cls += " bg-blue-700 text-white border-blue-700";
+        html += `<button type="button" class="${cls}" data-date="${key}">
+          <span class="text-[10px] opacity-70">${wd}</span>${parseInt(key.slice(8), 10)}</button>`;
+      });
+      document.getElementById("week-calendar").innerHTML = html;
+      const label = weekLabel(start);
+      document.getElementById("week-label").textContent = label;
+      document.getElementById("week-label-2").textContent = label;
+      document.getElementById("week-label-3").textContent = label;
+      document.getElementById("week-progress").textContent = `${filled}/${weekdays} 工作日已记录`;
+
+      document.querySelectorAll(".cal-day").forEach(el => {
+        el.onclick = () => { selectedDate = el.dataset.date; loadDailyForm(); renderCalendar(); };
+      });
+    }
+
+    // --- Daily form ---
+    function loadDailyForm() {
+      const d = getDaily(selectedDate);
+      document.getElementById("date-picker").value = selectedDate;
+      document.getElementById("daily-title").textContent =
+        selectedDate === todayKey() ? "今日日报" : selectedDate + " 日报";
+      document.getElementById("f-done").value = d.done;
+      document.getElementById("f-process").value = d.process;
+      document.getElementById("f-reflection").value = d.reflection;
+      document.getElementById("f-result").value = d.result;
+      document.getElementById("f-category").value =
+        d.category === "其他" ? FALLBACK_MODULE : (d.category || "");
+      renderDailyPlan();
+    }
+
+    function saveDailyForm() {
+      const done = document.getElementById("f-done").value.trim();
+      if (!done) { toast("请填写「今日完成」"); return; }
+      state.daily[selectedDate] = {
+        done,
+        process: document.getElementById("f-process").value.trim(),
+        reflection: document.getElementById("f-reflection").value.trim(),
+        result: document.getElementById("f-result").value.trim(),
+        category: document.getElementById("f-category").value,
+      };
+      saveDaily();
+      renderCalendar();
+      toast("已保存 " + selectedDate);
+    }
+
+    // --- Daily list ---
+    function renderDailyList() {
+      const start = getWeekStart(selectedDate);
+      const days = getWeekDays(start);
+      const el = document.getElementById("daily-list");
+      el.innerHTML = days.map(key => {
+        const d = getDaily(key);
+        const wdIdx = new Date(key + "T12:00:00").getDay();
+        const wd = WD[wdIdx === 0 ? 6 : wdIdx - 1];
+        const has = d.done.trim().length > 0;
+        const cat = d.category ? `<span class="ms-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-sm">${esc(d.category)}</span>` : "";
+        return `<button type="button" class="daily-list-item w-full flex items-center justify-between gap-3 py-3 text-left hover:bg-gray-50" data-date="${key}">
+          <div><span class="font-medium">${key.slice(5)} 周${wd}</span>${cat}
+          <span class="ms-2 text-xs ${has ? "text-green-600" : "text-gray-400"}">${has ? "已记录" : "未写"}</span></div>
+          <span class="text-sm text-gray-500 truncate max-w-[55%]">${esc(d.result || d.done || "—")}</span>
+        </button>`;
+      }).join("");
+      el.querySelectorAll(".daily-list-item").forEach(item => {
+        item.onclick = () => {
+          selectedDate = item.dataset.date;
+          document.querySelector('[data-page="daily"]').click();
+          loadDailyForm();
+          renderCalendar();
+        };
+      });
+    }
+
+    function findSectionByTitle(sections, titleHint) {
+      return sections.find(s =>
+        s.title.includes(titleHint) || titleHint.includes(s.title.split(" ")[0])
+      );
+    }
+
+    function appendToSection(sections, sectionTitle, text) {
+      if (!text || !text.trim()) return;
+      const sec = findSectionByTitle(sections, sectionTitle) ||
+        sections.find(s => s.title === sectionTitle);
+      if (!sec) return;
+      sec.body = sec.body ? sec.body.trim() + "\n" + text.trim() : text.trim();
+    }
+
+    // --- Generate weekly from daily ---
+    function generateWeekly() {
+      const start = getWeekStart(selectedDate);
+      const days = getWeekDays(start);
+      const entries = days.map(k => ({ date: k, ...getDaily(k) })).filter(e => e.done.trim() || e.result.trim());
+      const plannedTasks = getPlan(start).tasks;
+      const completedTasks = plannedTasks.filter(task => task.status === "completed");
+
+      if (!entries.length && !completedTasks.length) {
+        toast("本周还没有日报或已完成任务");
+        return;
+      }
+
+      const existing = getWeekly(start);
+      const sections = defaultSections().map(s => {
+        const prev = existing.sections?.find(p =>
+          p.title === s.title || p.title.includes(s.title.split(" ")[0])
+        );
+        return prev ? { ...prev, body: "" } : s;
+      });
+
+      entries.forEach(e => {
+        const dateTag = e.date.slice(5).replace("-", ".") + "：";
+        const content = e.result.trim() || e.done.trim().split("\n")[0];
+        if (e.category) {
+          appendToSection(sections, sectionTitleFor(e.category), dateTag + content);
+        } else if (e.result.trim()) {
+          appendToSection(sections, FALLBACK_MODULE, dateTag + e.result.trim());
+        }
+      });
+
+      completedTasks.forEach(task => {
+        const sectionTitle = sectionTitleFor(task.module);
+        const result = task.actualResult?.trim() || task.title;
+        const dateTag = task.assignedDate
+          ? task.assignedDate.slice(5).replace("-", ".") + "："
+          : "";
+        appendToSection(sections, sectionTitle, dateTag + result);
+      });
+
+      const unfinished = plannedTasks.filter(task => task.status !== "completed");
+      unfinished.forEach(task => {
+        appendToSection(
+          sections,
+          "下周事项",
+          `${task.module}：${task.title}${task.assignedDate ? `（原计划 ${task.assignedDate.slice(5)}）` : "（机动任务池）"}`,
+        );
+      });
+
+      entries.forEach(e => {
+        if (e.category && e.done.trim()) {
+          const lines = e.done.trim().split("\n").filter(Boolean);
+          if (lines.length > 1) {
+            appendToSection(sections, sectionTitleFor(e.category), lines.slice(1).join("\n"));
+          }
+        }
+      });
+
+      const reflections = entries.map(e => e.reflection).filter(Boolean);
+
+      state.weekly[start] = {
+        recipient: existing.recipient || "帅总",
+        titleSuffix: existing.titleSuffix || "社媒运营周总结如下",
+        personal: reflections.length
+          ? reflections.map((r, i) => `${entries[i]?.date?.slice(5)}：${r}`).join("\n\n")
+          : existing.personal,
+        experience: existing.experience,
+        sections,
+        status: "草稿",
+      };
+      saveWeekly();
+      loadWeeklyForm();
+      document.querySelector('[data-page="weekly"]').click();
+      toast(`已汇总 ${entries.length} 天日报和 ${completedTasks.length} 项完成任务`);
+    }
+
+    // --- Weekly form ---
+    function loadWeeklyForm() {
+      const start = getWeekStart(selectedDate);
+      const w = getWeekly(start);
+      document.getElementById("w-recipient").value = w.recipient || "帅总";
+      document.getElementById("w-title-suffix").value = w.titleSuffix || "社媒运营周总结如下";
+      document.getElementById("w-personal").value = w.personal || "";
+      document.getElementById("w-experience").value = w.experience || "";
+      const statusEl = document.getElementById("weekly-status");
+      statusEl.textContent = w.status || "草稿";
+      statusEl.className = w.status === "已发布"
+        ? "bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-sm"
+        : "bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-sm";
+      renderWeeklySections(w.sections || defaultSections());
+    }
+
+    function renderWeeklySections(sections) {
+      const el = document.getElementById("w-sections");
+      if (!sections.length) {
+        el.innerHTML = '<p class="text-sm text-gray-500">暂无章节，点击「生成本周周报」或手动添加</p>';
+        return;
+      }
+      el.innerHTML = sections.map((sec, i) => `
+        <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg" data-id="${sec.id}">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-sm text-gray-500 whitespace-nowrap">${cnNumeral(i + 1)}、</span>
+            <input type="text" value="${esc(sec.title)}" oninput="updateSection('${sec.id}','title',this.value)" placeholder="章节标题" class="flex-1 ${FIELD}" />
+            <button type="button" class="text-sm text-red-600 hover:underline whitespace-nowrap" onclick="removeSection('${sec.id}')">删除</button>
+          </div>
+          <textarea rows="5" oninput="updateSection('${sec.id}','body',this.value)" placeholder="章节内容，换行会保留" class="block p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500">${esc(sec.body || "")}</textarea>
+        </div>
+      `).join("");
+    }
+
+    window.updateSection = (id, key, val) => {
+      const start = getWeekStart(selectedDate);
+      const w = getWeekly(start);
+      const sec = w.sections.find(x => x.id === id);
+      if (!sec) return;
+      sec[key] = val;
+      state.weekly[start] = w;
+    };
+
+    window.removeSection = (id) => {
+      const start = getWeekStart(selectedDate);
+      const w = getWeekly(start);
+      w.sections = w.sections.filter(x => x.id !== id);
+      state.weekly[start] = w;
+      renderWeeklySections(w.sections);
+    };
+
+    function saveWeeklyForm() {
+      const start = getWeekStart(selectedDate);
+      state.weekly[start] = {
+        ...getWeekly(start),
+        recipient: document.getElementById("w-recipient").value.trim() || "帅总",
+        titleSuffix: document.getElementById("w-title-suffix").value.trim() || "社媒运营周总结如下",
+        personal: document.getElementById("w-personal").value,
+        experience: document.getElementById("w-experience").value,
+      };
+      saveWeekly();
+      toast("周报已保存");
+    }
+
+    // --- Share preview ---
+    function renderShare() {
+      const start = getWeekStart(selectedDate);
+      const w = getWeekly(start);
+      const el = document.getElementById("share-render");
+      const recipient = esc((w.recipient || "帅总").replace(/，$/, ""));
+      const titleLine = esc(buildReportTitle(w, start));
+
+      const sectionsHtml = (w.sections || []).map((sec, i) => `
+        <div class="mb-5">
+          <h4 class="font-semibold text-gray-900 mb-1">${cnNumeral(i + 1)}、${esc(sec.title)}</h4>
+          <p class="whitespace-pre-wrap text-gray-800">${esc(sec.body || "").trim() || "（暂无内容）"}</p>
+        </div>
+      `).join("");
+
+      el.innerHTML = `
+        <div class="max-w-2xl mx-auto p-8 bg-white border border-gray-200 rounded-lg shadow-sm leading-8">
+          <p class="mb-1">${recipient}，</p>
+          <p class="mb-6 font-medium">${titleLine}</p>
+          ${sectionsHtml}
+        </div>
+        <p class="text-xs text-gray-400 mt-3 text-center">
+          ${w.status === "已发布" ? "✓ 可分享" : "草稿 · 在周报编辑中「标记可分享」"}
+        </p>
+      `;
+    }
+
+    // --- Events ---
+    document.getElementById("date-picker").onchange = (e) => {
+      selectedDate = e.target.value;
+      loadDailyForm();
+      renderCalendar();
+    };
+
+    document.getElementById("btn-save-daily").onclick = saveDailyForm;
+    document.getElementById("btn-add-task").onclick = () => addPlanTask();
+    document.getElementById("btn-add-and-continue").onclick = () => addPlanTask({ keepFocus: true });
+    document.getElementById("btn-add-module").onclick = addModule;
+    document.getElementById("new-module-name").onkeydown = (e) => {
+      if (e.key === "Enter") { e.preventDefault(); addModule(); }
+    };
+    window.startAddToModule = startAddToModule;
+    document.getElementById("btn-assign").onclick = assignPlan;
+    document.getElementById("btn-prev-week").onclick = () => changePlanWeek(-7);
+    document.getElementById("btn-this-week").onclick = () => {
+      selectedDate = todayKey();
+      initPlanningControls();
+      renderPlanning();
+      renderCalendar();
+    };
+    document.getElementById("btn-next-week").onclick = () => changePlanWeek(7);
+    document.getElementById("btn-gen-result").onclick = () => {
+      const done = document.getElementById("f-done").value.trim();
+      if (!done) { toast("先填写今日完成"); return; }
+      document.getElementById("f-result").value = done.split("\n").filter(Boolean).slice(0, 2).join("；");
+      toast("已提取结论，可编辑后保存");
+    };
+
+    document.getElementById("btn-gen-weekly").onclick = generateWeekly;
+    document.getElementById("btn-save-weekly").onclick = saveWeeklyForm;
+    document.getElementById("btn-publish").onclick = () => {
+      const start = getWeekStart(selectedDate);
+      state.weekly[start] = { ...getWeekly(start), status: "已发布" };
+      saveWeekly();
+      const statusEl = document.getElementById("weekly-status");
+      statusEl.textContent = "已发布";
+      statusEl.className = "bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-sm";
+      toast("已标记可分享");
+    };
+
+    document.getElementById("btn-add-section").onclick = () => {
+      const start = getWeekStart(selectedDate);
+      const w = getWeekly(start);
+      w.sections.push({ id: crypto.randomUUID(), title: "新章节", body: "" });
+      state.weekly[start] = w;
+      renderWeeklySections(w.sections);
+    };
+
+    document.getElementById("btn-copy").onclick = () => {
+      const start = getWeekStart(selectedDate);
+      const w = getWeekly(start);
+      const text = formatReportText(w, start);
+      navigator.clipboard.writeText(text).then(() => toast("已复制，可直接粘贴到微信"));
+    };
+
+    document.querySelectorAll(".nav-tab").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll(".nav-tab").forEach(b => { b.className = NAV_IDLE; });
+        document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+        btn.className = NAV_ACTIVE;
+        document.getElementById("page-" + btn.dataset.page).classList.add("active");
+        if (btn.dataset.page === "planning") renderPlanning();
+        if (btn.dataset.page === "week-daily") renderDailyList();
+        if (btn.dataset.page === "weekly") loadWeeklyForm();
+        if (btn.dataset.page === "share") renderShare();
+      };
+    });
+
+    // Init
+    seedDemoData();
+    initPlanningControls();
+    loadDailyForm();
+    renderCalendar();
+    renderPlanning();
+  </script>
+</body>
+</html>
